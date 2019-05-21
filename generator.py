@@ -41,12 +41,12 @@ DOCUMENTS = []
 CONTACTS = []
 
 TIMEZONES = {
-    'Eastern (ET)',
-    'Central (CT)',
-    'Mountain (MT)',
-    'Pacific (PT)',
-    'Alaska (AKT)',
-    'Hawaii-Aleutian (HT)'
+    'Eastern': '(ET)',
+    'Central': '(CT)',
+    'Mountain': '(MT)',
+    'Pacific': '(PT)',
+    'Alaska': '(AKT)',
+    'Hawaii-Aleutian': '(HT)'
 }
 
 
@@ -95,7 +95,9 @@ class GenApp(tk.Tk):
         self.cutoff_neworder_label = tk.Label(self, text='New-order cutoff time: ')
         self.cutoff_neworder_entry = tk.Entry(self)
         self.timezone_label = tk.Label(self, text='Time zone: ')
-        self.timezone_entry = tk.Entry(self)
+        self.tz_choice = tk.StringVar()
+        self.tz_choice.set("Select TZ")
+        self.timezone_menu = tk.OptionMenu(self, self.tz_choice, *TIMEZONES.items())
 
         self.contacts_label = tk.Label(self, text='Select contacts: ')
         self.contacts_listbox = tk.Listbox(self, selectmode='multiple')
@@ -131,7 +133,7 @@ class GenApp(tk.Tk):
         current_row += 1
 
         self.timezone_label.grid(column=0, row=current_row, sticky='e')
-        self.timezone_entry.grid(column=1, row=current_row, sticky='w')
+        self.timezone_menu.grid(column=1, row=current_row, sticky='w')
         current_row += 1
 
         self.contacts_label.grid(column=0, row=current_row, sticky='e')
@@ -151,9 +153,12 @@ class GenApp(tk.Tk):
         SITE_ADDRESS = self.address_entry.get()
         NAME_AND_CODE = SITE_NAME + ' - ' + SITE_CODE
         GROUPNO = 'PRN'+SITE_CODE
-        REORDER_CUTOFF = self.cutoff_reorder_entry.get()
-        NEWORDER_CUTOFF = self.cutoff_neworder_entry.get()
-        TIMEZONE = self.timezone_entry.get()
+        print(self.tz_choice.get())
+        TIMEZONE = ' ' + self.tz_choice.get()[-5:-3]
+        print(TIMEZONE)
+        REORDER_CUTOFF = self.cutoff_reorder_entry.get()+TIMEZONE
+        NEWORDER_CUTOFF = self.cutoff_neworder_entry.get()+TIMEZONE
+
         NEW_FILEPATH = SITE_NAME + '\\'
         self.selected_docs = []
         for d in self.documents_listbox.curselection():
@@ -405,8 +410,8 @@ class DailyDrug(Pdf):
         overlay_can.setFont('Calibri', 11)
         overlay_can.drawString(648, 558, REORDER_CUTOFF)
         overlay_can.drawString(659, 531, NEWORDER_CUTOFF)
-        overlay_can.setFont('CalibriBd', 14)
         overlay_can.drawString(512, 567, SITE_CODE)
+        overlay_can.setFont('CalibriBd', 14)
         overlay_can.drawString(180, 565, self.center_name())
         overlay_can.save()
 
