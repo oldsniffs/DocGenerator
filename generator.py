@@ -1,8 +1,8 @@
 '''
-TODO: Select/deselect all buttons for documents listbox
-TODO: Revise Documents class and DOCUMENTS list so easier-to-read names are shown in listbox
-TODO: listbox (dropdown?) for timezone
-TODO: Contact Sheet
+TODO: Contact selection for contact sheet
+TODO: Read the contact data in from an easily edited word document so Jamie can add/remove contacts
+
+TODO: (Fancy) Auto-fill semicolon during time entry
 '''
 
 import os
@@ -61,7 +61,6 @@ class GenApp(tk.Tk):
         self.create_widgets()
 
     def populate_contacts(self):
-        # TODO: Read the contact data in from an easily edited word document so Jamie can add/remove contacts
         CONTACTS.append(Contact('Chuck Allison', 'callison@diamondpharmacy.com', '2606'))
         CONTACTS.append(Contact('Dan Smith', 'dsmith@diamondpharmacy.com', '2627'))
         CONTACTS.append(Contact('Big Biff', 'dsmith@diamondpharmacy.com', '2627'))
@@ -69,15 +68,19 @@ class GenApp(tk.Tk):
         CONTACTS.append(Contact('Tweety', 'dsmith@diamondpharmacy.com', '2627'))
 
     def populate_documents(self):
-        DOCUMENTS.append(Document('CONTROLLED STOCK NEW ORDER 71015', ControlledStockNewOrder))
-        DOCUMENTS.append(Document('CONTROLLED STOCK REORDER', ControlledStockReorder))
+        # Pdf
         DOCUMENTS.append(Document('Daily Drug 2016', DailyDrug))
-        DOCUMENTS.append(Document('Fax Cover', FaxCover))
+        DOCUMENTS.append(Document('StatFormAscella249', StatFormAscella249))
+        # Xlsx
+        DOCUMENTS.append(Document('CONTROLLED STOCK NEW ORDER 71015', ControlledStockNewOrder))
         DOCUMENTS.append(Document('MEDICATION RETURN FORM', MedicationReturnForm))
+        # Docx
+        DOCUMENTS.append(Document('CONTROLLED STOCK REORDER', ControlledStockReorder))
+        DOCUMENTS.append(Document('Fax Cover', FaxCover))
         DOCUMENTS.append(Document('NONCONTROLLED STOCK REORDER 10.2016', NonControlledStockReorder))
         DOCUMENTS.append(Document('Non-Formulary Request', NonFormularyRequest))
         DOCUMENTS.append(Document('PATIENT SPECIFIC REFILL FORM', PatientSpecificRefillForm))
-        DOCUMENTS.append(Document('StatFormAscella249', StatFormAscella249))
+
 
     def create_widgets(self):
 
@@ -97,7 +100,7 @@ class GenApp(tk.Tk):
         self.timezone_label = tk.Label(self, text='Time zone: ')
         self.tz_choice = tk.StringVar()
         self.tz_choice.set("Select TZ")
-        self.timezone_menu = tk.OptionMenu(self, self.tz_choice, *TIMEZONES.items())
+        self.timezone_menu = tk.OptionMenu(self, self.tz_choice, TIMEZONES.items())
 
         self.contacts_label = tk.Label(self, text='Select contacts: ')
         self.contacts_listbox = tk.Listbox(self, selectmode='multiple')
@@ -108,6 +111,9 @@ class GenApp(tk.Tk):
         self.documents_listbox = tk.Listbox(self, selectmode='multiple', width=35)
         for d in DOCUMENTS:
             self.documents_listbox.insert('end', d.name)
+
+        self.select_all_button = tk.Button(self, text='Select All', command=self.select_all_docs)
+        self.deselect_all_button = tk.Button(self, text='Deselect All', command=self.deselect_all_docs)
 
         self.button = tk.Button(self, text='Give Birth', command=self.execute)
 
@@ -136,12 +142,11 @@ class GenApp(tk.Tk):
         self.timezone_menu.grid(column=1, row=current_row, sticky='w')
         current_row += 1
 
-        self.contacts_label.grid(column=0, row=current_row, sticky='e')
-        self.contacts_listbox.grid(column=1, row=current_row, sticky='w')
-        current_row += 1
-
         self.documents_label.grid(column=0, row=current_row, sticky='e')
-        self.documents_listbox.grid(column=1, row=current_row)
+        self.documents_listbox.grid(column=1, row=current_row, rowspan=2)
+        self.select_all_button.grid(column=0, row=current_row, sticky='s')
+        current_row += 1
+        self.deselect_all_button.grid(column=0, row=current_row, sticky='n')
         current_row += 1
 
         self.button.grid(column=0, row=current_row, columnspan=2)
@@ -164,6 +169,13 @@ class GenApp(tk.Tk):
         for d in self.documents_listbox.curselection():
             self.selected_docs.append(self.documents_listbox.get(d))
 
+    def select_all_docs(self):
+        for i in range(self.documents_listbox.size()):
+            self.documents_listbox.selection_set(i)
+
+    def deselect_all_docs(self):
+        for i in range(self.documents_listbox.size()):
+            self.documents_listbox.selection_clear(i)
 
     def clear_fields(self):
         self.name_entry.delete(0, 'end')
