@@ -4,6 +4,7 @@ TODO: Revise Documents class and DOCUMENTS list so easier-to-read names are show
 TODO: Implement sentdex's header system to help center align pdf overlays, such as is needed for DailyDrug
 TODO: listbox (dropdown?) for timezone
 TODO: Implemnt a base xlsx class for xl docs
+TODO: Contact Sheet
 '''
 
 import os
@@ -13,10 +14,17 @@ import docx
 import PyPDF2
 import io
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 
-SITE_NAME = 'The Test Jail'
+pdfmetrics.registerFont(TTFont('CalibriBd', 'calibrib.ttf'))
+pdfmetrics.registerFont(TTFont('Calibri', 'calibri.ttf'))
+
+
+SITE_NAME = 'The State of Stat| Test Jail Prison'
 SITE_CODE = 'TEST'
+GROUPNO = 'PRN'+SITE_CODE
 SITE_ADDRESS = '9999 Big Noodle Street, Testland TA 55555'
 NAME_AND_CODE = SITE_NAME + ' - ' + SITE_CODE
 REORDER_CUTOFF = '5:05PM'
@@ -173,35 +181,37 @@ class Contact:
         self.email = email
         self.extension = extension
 
+
 class Document:
     def __init__(self, name, this_class):
         self.name = name
         self.this_class = this_class
 
-class ControlledStockNewOrder:
+
+class Xlsx:
+    def __init__(self):
+        self.wb = openpyxl.load_workbook(TEMPLATES + self.filename)
+
+    def process(self):
+        self.replace()
+        self.wb.save(NEW_FILEPATH + self.filename)
+
+class ControlledStockNewOrder(Xlsx):
     def __init__(self):
         self.filename = 'CONTROLLED STOCK NEW ORDER 71015.xlsx'
-        self.wb = openpyxl.load_workbook(TEMPLATES + self.filename)
+        super().__init__()
 
     def replace(self):
         self.wb['Sheet1']['B4'].value = 'Facility Name/Code: ' + NAME_AND_CODE
 
-    def process(self):
-        self.replace()
-        self.wb.save(NEW_FILEPATH + self.filename)
 
-
-class MedicationReturnForm:
+class MedicationReturnForm(Xlsx):
     def __init__(self):
         self.filename = 'MEDICATION RETURN FORM.xlsx'
-        self.wb = openpyxl.load_workbook(TEMPLATES + self.filename)
+        super().__init__()
 
     def replace(self):
         self.wb['Sheet1']['A2'].value = 'FACILITY NAME: ' + SITE_NAME
-
-    def process(self):
-        self.replace()
-        self.wb.save(NEW_FILEPATH + self.filename)
 
 
 class Docx:
@@ -261,7 +271,7 @@ class ControlledStockReorder(Docx):
                             if run.text == 'Name and Code':
                                 run.text = NAME_AND_CODE
                             elif run.text == 'REFILL CUTOFF TIME ':
-                                paragraph.runs[rNum+1].text = CUTOFF_TIME
+                                paragraph.runs[rNum+1].text = REORDER_CUTOFF
                                 paragraph.runs[rNum+2].text = ''
                                 paragraph.runs[rNum+3].text = ''
                             rNum += 1
@@ -282,7 +292,7 @@ class NonControlledStockReorder(Docx):
                             if run.text == 'Name and Code':
                                 run.text = NAME_AND_CODE
                             elif run.text == 'REFILL CUTOFF TIME ':
-                                paragraph.runs[rNum + 1].text = CUTOFF_TIME + '\n'
+                                paragraph.runs[rNum + 1].text = REORDER_CUTOFF + '\n'
                             rNum += 1
 
 
@@ -321,12 +331,10 @@ class PatientSpecificRefillForm(Docx):
                             if run.text == 'Name and Code':
                                 run.text = NAME_AND_CODE
                             elif run.text == 'REFILL CUTOFF TIME':
-                                run.text = 'REFILL CUTOFF TIME ' + CUTOFF_TIME
+                                run.text = 'REFILL CUTOFF TIME ' + REORDER_CUTOFF
 
 
 class Pdf:
-
-    # Output name should end in -<code>
 
     def merge(self):
         self.packet.seek(0)
@@ -339,18 +347,14 @@ class Pdf:
         output_file = open(NEW_FILEPATH+self.output_filename, 'wb')
         self.output_writer.addPage(self.page)
         self.output_writer.write(output_file)
-        print('writing out ', output_file)
         output_file.close()
         self.base_file.close()
 
     def show_fields(self):
         fields = self.base_reader.getFields()
+        print(fields)
         for k, v in fields.items():
             print(k, v)
-
-        for k, v in self.overlay_reader.getFields().items():
-            print(k, v)
-
 
 class StatFormAscella249(Pdf):
     def __init__(self):
@@ -372,7 +376,6 @@ class StatFormAscella249(Pdf):
         overlay_can.drawString(644, 232, GROUPNO)
         overlay_can.save()
 
-
 class DailyDrug(Pdf):
     def __init__(self):
         self.base_file = open(TEMPLATES+'Daily Drug 2016.pdf', 'rb')
@@ -382,17 +385,31 @@ class DailyDrug(Pdf):
         self.output_filename = 'Daily Drug 2016.pdf'
         self.output_writer = PyPDF2.PdfFileWriter()
 
+    def merge(self):
+        self.packet.seek(0)
+        overlay_reader = PyPDF2.PdfFileReader(self.packet)
+        self.page.mergePage(overlay_reader.getPage(0))
+
     def replace(self):
 
         self.packet = io.BytesIO()
 
         overlay_can = canvas.Canvas(self.packet, PDF_XY_LANDSCAPE)
-        overlay_can.setFont('Helvetica', 11)
-        overlay_can.drawString(640, 560, REORDER_CUTOFF)
-        print(REORDER_CUTOFF)
+        overlay_can.setFont('Calibri', 11)
+        overlay_can.drawString(648, 558, REORDER_CUTOFF)
+        overlay_can.drawString(659, 531, NEWORDER_CUTOFF)
+        overlay_can.setFont('CalibriBd', 14)
+        overlay_can.drawString(512, 567, SITE_CODE)
+        overlay_can.drawString(180, 565, self.center_name())
         overlay_can.save()
+
+    def center_name(self):
+        wingsize = (56 - len(SITE_NAME))/2
+        wingstring = ' ' * int(round(wingsize))
+        return wingstring + SITE_NAME + wingstring
 
 
 DailyDrug().process()
+
 app = GenApp()
 app.mainloop()
