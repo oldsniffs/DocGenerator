@@ -1,9 +1,7 @@
 '''
 TODO: Select/deselect all buttons for documents listbox
 TODO: Revise Documents class and DOCUMENTS list so easier-to-read names are shown in listbox
-TODO: Implement sentdex's header system to help center align pdf overlays, such as is needed for DailyDrug
 TODO: listbox (dropdown?) for timezone
-TODO: Implemnt a base xlsx class for xl docs
 TODO: Contact Sheet
 '''
 
@@ -22,7 +20,7 @@ pdfmetrics.registerFont(TTFont('CalibriBd', 'calibrib.ttf'))
 pdfmetrics.registerFont(TTFont('Calibri', 'calibri.ttf'))
 
 
-SITE_NAME = 'The State of Stat| Test Jail Prison'
+SITE_NAME = 'The State of Stat Test Jail Prison'
 SITE_CODE = 'TEST'
 GROUPNO = 'PRN'+SITE_CODE
 SITE_ADDRESS = '9999 Big Noodle Street, Testland TA 55555'
@@ -41,6 +39,15 @@ TEMPLATES = 'templates\\'
 
 DOCUMENTS = []
 CONTACTS = []
+
+TIMEZONES = {
+    'Eastern (ET)',
+    'Central (CT)',
+    'Mountain (MT)',
+    'Pacific (PT)',
+    'Alaska (AKT)',
+    'Hawaii-Aleutian (HT)'
+}
 
 
 class GenApp(tk.Tk):
@@ -138,7 +145,7 @@ class GenApp(tk.Tk):
         self.button.grid(column=0, row=current_row, columnspan=2)
 
     def get_input(self):
-        global SITE_NAME, SITE_CODE, SITE_ADDRESS, CUTOFF_TIME, NEW_FILEPATH, NAME_AND_CODE, GROUPNO
+        global SITE_NAME, SITE_CODE, SITE_ADDRESS, REORDER_CUTOFF, NEWORDER_CUTOFF, NEW_FILEPATH, NAME_AND_CODE, GROUPNO
         SITE_NAME = self.name_entry.get()
         SITE_CODE = self.code_entry.get().upper()
         SITE_ADDRESS = self.address_entry.get()
@@ -148,6 +155,10 @@ class GenApp(tk.Tk):
         NEWORDER_CUTOFF = self.cutoff_neworder_entry.get()
         TIMEZONE = self.timezone_entry.get()
         NEW_FILEPATH = SITE_NAME + '\\'
+        self.selected_docs = []
+        for d in self.documents_listbox.curselection():
+            self.selected_docs.append(self.documents_listbox.get(d))
+
 
     def clear_fields(self):
         self.name_entry.delete(0, 'end')
@@ -164,12 +175,8 @@ class GenApp(tk.Tk):
         self.get_input()
         self.clear_fields()
         self.make_dir()
-        doc_list_choices = self.documents_listbox.curselection()
-        docs = []
-        for d in doc_list_choices:
-            docs.append(self.documents_listbox.get(d))
         for doc in DOCUMENTS:
-            for d in docs:
+            for d in self.selected_docs:
                 if doc.name == d:
                     print(doc.name, 'matched')
                     doc.this_class().process()
