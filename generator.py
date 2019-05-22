@@ -2,6 +2,9 @@
 TODO: Contact selection for contact sheet
 TODO: Read the contact data in from an easily edited word document so Jamie can add/remove contacts
 
+TODO: (trivial) Centering accuracy into pdf dependent on physical size of characters. Python doens't distinguish between
+for example, "i" and "B" for the purpose of spacing.
+
 TODO: (Fancy) Auto-fill semicolon during time entry
 '''
 
@@ -100,7 +103,7 @@ class GenApp(tk.Tk):
         self.timezone_label = tk.Label(self, text='Time zone: ')
         self.tz_choice = tk.StringVar()
         self.tz_choice.set("Select TZ")
-        self.timezone_menu = tk.OptionMenu(self, self.tz_choice, TIMEZONES.items())
+        self.timezone_menu = tk.OptionMenu(self, self.tz_choice, *TIMEZONES.items())
 
         self.contacts_label = tk.Label(self, text='Select contacts: ')
         self.contacts_listbox = tk.Listbox(self, selectmode='multiple')
@@ -428,9 +431,7 @@ class DailyDrug(Pdf):
         overlay_can.save()
 
     def center_name(self):
-        wingsize = (56 - len(SITE_NAME))/2
-        wingstring = ' ' * int(round(wingsize))
-        return wingstring + SITE_NAME + wingstring
+        return f"{SITE_NAME:^54}"
 
 
 DailyDrug().process()
